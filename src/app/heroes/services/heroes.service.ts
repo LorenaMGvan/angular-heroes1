@@ -20,5 +20,10 @@ export class HeroService {
             catchError( error => of(undefined) ) // con el of regresamos un observable
         );
     }
+
+    // regresa un observable que emite Valores de tipo HEro como un arreglo
+    getSugerencias(query: string): Observable<Hero[]> {
+        return this.http.get<Hero[]>(`${this.baseUrl}/heroes?q=${ query }&_limit=6`)
+    }
     
 }
