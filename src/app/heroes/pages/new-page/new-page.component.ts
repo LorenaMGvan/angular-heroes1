@@ -1,10 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+
 import { Hero, Publisher } from '../../interfaces/hero.interface';
 import { HeroService } from '../../services/heroes.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { filter, switchMap, tap } from 'rxjs';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-new-page',
@@ -19,7 +23,8 @@ export class NewPageComponent implements OnInit{
     private heroesService: HeroService,
     private activateRouter:ActivatedRoute,
     private router: Router,
-    private snackbar: MatSnackBar ){
+    private snackbar: MatSnackBar,
+    private dialog:MatDialog ){
   }
   ngOnInit(): void {
     // ocupamos aber los parametro que viene por la URL 
@@ -79,6 +84,37 @@ export class NewPageComponent implements OnInit{
       formisValid: this.formHeroe.valid,
       value: this.formHeroe.value,
     });    
+  }
+
+  onDeleteHero() {
+    if ( !this.currentHero.id ) throw Error('El héroe es requerido');
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: this.formHeroe.value,
+    });
+
+    dialogRef.afterClosed()
+    .pipe(
+      filter( (result: boolean) => result),
+      switchMap( () => this.heroesService.deleteHeroById( this.currentHero.id )),
+      // tap( eliminado => console.log( { eliminado}) ), // con el tap, podemos ver que devuelve
+      filter( (eliminado: boolean) => eliminado),
+    )
+    .subscribe( ()=> {  // si llegaos a este punto es que se elimno correctamente
+      this.router.navigate(['/heroes'])
+    })
+
+
+
+    // esto comentado se mejora en la parte de arriba para no tener un suscribe dentro de otro suscribe
+    // dialogRef.afterClosed().subscribe(result => {
+    //   console.log('The dialog was closed !!');
+    //   this.heroesService.deleteHeroById( this.currentHero.id )
+    //   .subscribe( eliminado => {
+    //     if( eliminado)
+    //     this.router.navigate(['/heroes']);
+    //   })
+    // });
   }
 
   showStackbar(mensaje: string) {
